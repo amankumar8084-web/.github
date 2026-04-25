@@ -1,1 +1,37 @@
+name: Backend Health Check
 
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes
+  workflow_dispatch:         # manual trigger
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Hit backend and capture status
+        id: check
+        run: |
+          URL="https://academia-connect-3.onrender.com/health"
+
+          echo "Checking: $URL"
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $URL)
+
+          echo "HTTP Status: $STATUS"
+
+          if [ "$STATUS" -eq 200 ]; then
+            echo "Backend is healthy ✅"
+          else
+            echo "Backend is DOWN ❌"
+            exit 1
+          fi
+
+      - name: Log success
+        if: success()
+        run: echo "Health check passed"
+
+      - name: Log failure
+        if: failure()
+        run: echo "Health check failed"
