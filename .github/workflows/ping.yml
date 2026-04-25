@@ -13,7 +13,7 @@ jobs:
       - name: Hit backend and capture status
         id: check
         run: |
-          URL="https://academia-connect-3.onrender.com/health"
+          URL="https://academia-connect-3.onrender.com/api/health"
 
           echo "Checking: $URL"
 
