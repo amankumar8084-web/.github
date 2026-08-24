@@ -2,36 +2,52 @@ name: Backend Health Check
 
 on:
   schedule:
-    - cron: "*/5 * * * *"   # every 5 minutes
-  workflow_dispatch:         # manual trigger
+    - cron: "*/5 * * * *" # Every 5 minutes
+  workflow_dispatch: # Manual trigger
 
 jobs:
   health-check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Hit backend and capture status
-        id: check
+      - name: Check all backend endpoints
         run: |
-          URL="https://academia-connect-3.onrender.com/api/health"
+          URLS=(
+            "https://academia-connect-3.onrender.com/api/health"
+            "https://creatorbridge.onrender.com"
+          )
 
-          echo "Checking: $URL"
+          FAILED=0
 
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" $URL)
+          for URL in "${URLS[@]}"; do
+            echo "----------------------------------------"
+            echo "Checking: $URL"
 
-          echo "HTTP Status: $STATUS"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
 
-          if [ "$STATUS" -eq 200 ]; then
-            echo "Backend is healthy ✅"
-          else
-            echo "Backend is DOWN ❌"
+            echo "HTTP Status: $STATUS"
+
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Backend is healthy ✅"
+            else
+              echo "Backend is DOWN ❌"
+              FAILED=1
+            fi
+          done
+
+          echo "----------------------------------------"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo "One or more backend endpoints failed ❌"
             exit 1
+          else
+            echo "All backend endpoints are healthy ✅"
           fi
 
       - name: Log success
         if: success()
-        run: echo "Health check passed"
+        run: echo "All health checks passed ✅"
 
       - name: Log failure
         if: failure()
-        run: echo "Health check failed"
+        run: echo "One or more health checks failed ❌"
